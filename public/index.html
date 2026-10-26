@@ -1,0 +1,582 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Hangeul Practice</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Albert+Sans:wght@400;500;600&family=Gowun+Batang:wght@400;700&family=Noto+Sans+KR:wght@400;500&display=swap">
+<style>
+html { color-scheme: light; }
+body { margin: 0; }
+/* Layout: one narrow left-aligned column. Header with three tabs, then the active view.
+   The one bold thing is the practice prompt: a big Hangul word on a dashed calligraphy-grid face. */
+:root {
+  --bg: #edf2ef;
+  --surface: #f8fbf9;
+  --ink: #16232a;
+  --muted: #566a6c;
+  --line: #c9d7d1;
+  --grid: #b7cbc3;
+  --accent: #2a6e63;
+  --accent-ink: #f4fbf8;
+  --accent-soft: #d5e7e0;
+  --good: #1d6f45;
+  --good-soft: #d6eedf;
+  --bad: #a4313f;
+  --bad-soft: #f6dde0;
+  --font-ui: "Albert Sans", "Noto Sans KR", system-ui, sans-serif;
+  --font-han: "Gowun Batang", "Noto Serif KR", "Batang", serif;
+}
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme="light"]) {
+    --bg: #0f1b1c; --surface: #162526; --ink: #e6f0ec; --muted: #93a8a4; --line: #2b3f3e; --grid: #2f4745;
+    --accent: #6fc2ae; --accent-ink: #0b1a17; --accent-soft: #1e3a36;
+    --good: #74d69b; --good-soft: #173826; --bad: #f08a98; --bad-soft: #3f1f26;
+    color-scheme: dark;
+  }
+}
+:root[data-theme="dark"] {
+  --bg: #0f1b1c; --surface: #162526; --ink: #e6f0ec; --muted: #93a8a4; --line: #2b3f3e; --grid: #2f4745;
+  --accent: #6fc2ae; --accent-ink: #0b1a17; --accent-soft: #1e3a36;
+  --good: #74d69b; --good-soft: #173826; --bad: #f08a98; --bad-soft: #3f1f26;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; }
+body {
+  background: var(--bg); color: var(--ink); font-family: var(--font-ui); font-size: 16px; line-height: 1.5;
+  padding-block: 20px 48px;
+  padding-left: max(16px, env(safe-area-inset-left, 0px));
+  padding-right: max(16px, env(safe-area-inset-right, 0px));
+}
+.wrap { max-width: 720px; margin: 0 auto; display: grid; gap: 24px; }
+button, input, select { font: inherit; color: inherit; }
+h1, h2, h3, p { margin: 0; }
+h2 { font-size: 1.15rem; font-weight: 600; text-wrap: balance; }
+
+header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 6px 16px; }
+.brand { display: flex; align-items: baseline; gap: 10px; }
+.brand .ko { font-family: var(--font-han); font-size: 1.7rem; font-weight: 700; color: var(--accent); }
+.brand .name { font-size: .8rem; letter-spacing: .12em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+#status { font-size: .8rem; color: var(--muted); }
+
+nav { display: flex; gap: 4px; border-bottom: 1px solid var(--line); }
+nav button {
+  background: none; border: 0; border-bottom: 2px solid transparent; margin-bottom: -1px;
+  padding: 10px 14px; min-height: 44px; cursor: pointer; color: var(--muted); font-weight: 500;
+}
+nav button[aria-current="page"] { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+
+.btn {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 8px 14px;
+  min-height: 44px; cursor: pointer; font-weight: 500;
+}
+.btn:hover { border-color: var(--accent); }
+.btn.primary { background: var(--accent); color: var(--accent-ink); border-color: var(--accent); font-weight: 600; }
+.btn.primary:hover { filter: brightness(1.06); }
+.btn.danger { background: var(--bad); color: #fff; border-color: var(--bad); }
+.btn.sm { min-height: 36px; padding: 4px 10px; font-size: .9rem; }
+.btn:disabled { opacity: .5; cursor: not-allowed; }
+.link { background: none; border: 0; padding: 8px 0; color: var(--accent); cursor: pointer; font-weight: 500; min-height: 44px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+label { display: grid; gap: 4px; font-size: .85rem; color: var(--muted); font-weight: 500; }
+input[type="text"], select {
+  background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 9px 11px;
+  min-height: 44px; width: 100%; min-width: 0; color: var(--ink); font-size: 1rem;
+}
+input[lang="ko"] { font-family: var(--font-han), var(--font-ui); font-size: 1.1rem; }
+section { display: grid; gap: 14px; }
+.sub { color: var(--muted); font-size: .9rem; }
+.note { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px;
+  background: var(--accent-soft); border-radius: 4px; padding: 10px 14px; font-size: .9rem; }
+
+.form-row { display: flex; flex-wrap: wrap; gap: 12px; align-items: end; }
+.form-row > label { flex: 1 1 170px; min-width: 0; }
+.head-row { display: flex; flex-wrap: wrap; align-items: end; justify-content: space-between; gap: 10px; }
+.head-row label { min-width: 170px; }
+
+ul.list { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+.row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 6px 14px; padding: 12px 0; border-bottom: 1px solid var(--line); align-items: baseline; }
+.row .ko { font-family: var(--font-han); font-size: 1.3rem; font-weight: 700; overflow-wrap: anywhere; }
+.row .en { overflow-wrap: anywhere; }
+.row .meta { grid-column: 1 / -1; display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; }
+.chip { font-size: .78rem; color: var(--muted); border: 1px solid var(--line); border-radius: 99px; padding: 2px 10px; }
+.acts { display: flex; gap: 6px; flex-wrap: wrap; }
+.row.edit, .row.confirm { grid-template-columns: 1fr; }
+.row.confirm p { font-size: .95rem; }
+.empty { padding: 20px 0; color: var(--muted); }
+.msg { min-height: 1.4em; font-size: .88rem; color: var(--good); }
+.msg.err { color: var(--bad); }
+
+.seg { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; }
+.seg legend { font-size: .85rem; color: var(--muted); font-weight: 500; padding: 0; margin-bottom: 6px; }
+.seg label { display: flex; align-items: center; gap: 10px; border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; background: var(--surface); color: var(--ink); font-size: 1rem; cursor: pointer; min-height: 48px; }
+.seg label:has(input:checked) { border-color: var(--accent); background: var(--accent-soft); }
+.seg input { accent-color: var(--accent); width: 18px; height: 18px; margin: 0; }
+.setup-grid { display: grid; gap: 16px; max-width: 460px; }
+.big { min-height: 52px; font-size: 1.05rem; }
+
+.topline { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.count { font-variant-numeric: tabular-nums; color: var(--muted); font-size: .9rem; }
+.bar { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; }
+.bar i { display: block; height: 100%; background: var(--accent); transition: width .25s; }
+.prompt {
+  position: relative; background: var(--surface); border: 1px solid var(--line); border-radius: 6px;
+  min-height: 230px; padding: 16px 18px 28px; display: grid; grid-template-rows: auto 1fr; overflow: hidden;
+}
+.prompt::before, .prompt::after { content: ""; position: absolute; pointer-events: none; }
+.prompt::before { left: 0; right: 0; top: 58%; height: 1px; background: repeating-linear-gradient(90deg, var(--grid) 0 7px, transparent 7px 14px); }
+.prompt::after { top: 0; bottom: 0; left: 50%; width: 1px; background: repeating-linear-gradient(180deg, var(--grid) 0 7px, transparent 7px 14px); }
+.prompt .tag { position: relative; z-index: 1; font-size: .78rem; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.prompt .word { position: relative; z-index: 1; align-self: center; text-align: center; overflow-wrap: anywhere; line-height: 1.25; padding: 0 4px; }
+.prompt .word.ko { font-family: var(--font-han); font-weight: 700; font-size: clamp(2.6rem, 11vw, 4.2rem); }
+.prompt .word.en { font-size: clamp(1.9rem, 7vw, 2.8rem); font-weight: 500; }
+.answer-row { display: flex; flex-wrap: wrap; gap: 10px; }
+.answer-row input { flex: 1 1 220px; }
+.fb { border-radius: 4px; padding: 14px 16px; display: grid; gap: 6px; }
+.fb strong { font-size: 1.02rem; }
+.fb.good { background: var(--good-soft); color: var(--good); }
+.fb.bad { background: var(--bad-soft); color: var(--bad); }
+.fb .ans { color: var(--ink); font-size: 1.15rem; font-weight: 600; overflow-wrap: anywhere; }
+.fb .ans[lang="ko"] { font-family: var(--font-han); font-size: 1.4rem; font-weight: 700; }
+.fb .you { color: var(--ink); font-size: .92rem; overflow-wrap: anywhere; }
+.fb-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.score { font-size: 2.6rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
+.score small { font-size: 1rem; color: var(--muted); font-weight: 500; }
+.missed .ko { font-family: var(--font-han); font-weight: 700; font-size: 1.15rem; }
+@media (prefers-reduced-motion: reduce) { .bar i { transition: none; } }
+</style>
+</head>
+<body>
+
+<div class="wrap">
+  <header>
+    <div class="brand"><span class="ko" lang="ko">한글 연습</span><span class="name">Hangeul Practice</span></div>
+    <div id="status" role="status" aria-live="polite">Loading…</div>
+  </header>
+  <nav aria-label="Sections">
+    <button type="button" data-act="nav" data-to="practice">Practice</button>
+    <button type="button" data-act="nav" data-to="cards">Cards</button>
+    <button type="button" data-act="nav" data-to="groups">Groups</button>
+  </nav>
+  <main id="app"></main>
+</div>
+
+<script>
+(function () {
+  var KEY = "hangeul-practice-v1", PKEY = "hangeul-practice-prefs";
+  var $ = function (s, r) { return (r || document).querySelector(s); };
+  var esc = function (s) { return String(s).replace(/[&<>"']/g, function (c) { return { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]; }); };
+  var uid = function () { return Math.random().toString(36).slice(2, 8) + Date.now().toString(36).slice(-4); };
+  var clone = function (o) { return JSON.parse(JSON.stringify(o)); };
+  var plural = function (n) { return n + (n === 1 ? " card" : " cards"); };
+
+  /* ---------- data ---------- */
+  function starter() {
+    var c = function (ko, en, g) { return { id: uid(), ko: ko, en: en, g: g }; };
+    return {
+      v: 1, updatedAt: 0, starter: true,
+      groups: [{ id: "g_greet", name: "Greetings" }, { id: "g_food", name: "Food" }],
+      cards: [
+        c("안녕하세요", "hello", "g_greet"), c("감사합니다", "thank you", "g_greet"),
+        c("죄송합니다", "sorry", "g_greet"), c("네", "yes", "g_greet"), c("아니요", "no", "g_greet"),
+        c("안녕히 가세요", "goodbye", "g_greet"), c("처음 뵙겠습니다", "nice to meet you", "g_greet"),
+        c("물", "water", "g_food"), c("밥", "rice / meal", "g_food"), c("김치", "kimchi", "g_food"),
+        c("커피", "coffee", "g_food"), c("맛있어요", "delicious", "g_food")
+      ]
+    };
+  }
+  var S = { groups: [], cards: [], starter: false };
+  var ready = false;
+  var prefs = { group: "all", dir: "ko-en" };
+  try { var p = JSON.parse(localStorage.getItem(PKEY)); if (p) { prefs.group = p.group || "all"; prefs.dir = p.dir === "en-ko" ? "en-ko" : "ko-en"; } } catch (e) {}
+  function savePrefs() { try { localStorage.setItem(PKEY, JSON.stringify(prefs)); } catch (e) {} }
+
+  /* ---------- server API ---------- */
+  var TKEY = "hangeul-practice-token";
+  function getToken() { try { return localStorage.getItem(TKEY) || ""; } catch (e) { return ""; } }
+  function setToken(t) { try { if (t) localStorage.setItem(TKEY, t); else localStorage.removeItem(TKEY); } catch (e) {} }
+  function api(method, path, body) {
+    var h = { "Content-Type": "application/json" }, t = getToken();
+    if (t) h.Authorization = "Bearer " + t;
+    return fetch("/api" + path, { method: method, headers: h, body: body ? JSON.stringify(body) : undefined }).then(function (r) {
+      return r.json().catch(function () { return {}; }).then(function (j) {
+        if (!r.ok) { var e = new Error(j.error || ("Server error " + r.status)); e.status = r.status; throw e; }
+        return j;
+      });
+    });
+  }
+
+  /* ---------- saving ---------- */
+  var saveTimer = null, retryTimer = null, saving = false, dirty = false;
+  function setStatus(k) {
+    $("#status").textContent = k === "saving" ? "Saving…" : k === "saved" ? "Saved" : k === "error" ? "Not saved. Retrying…" : "Loading…";
+  }
+  function touch() {
+    dirty = true; setStatus("saving");
+    clearTimeout(saveTimer); saveTimer = setTimeout(flush, 500);
+  }
+  function flush() {
+    if (saving || !dirty) return;
+    saving = true; dirty = false;
+    api("PUT", "/state", { groups: S.groups, cards: S.cards, starter: !!S.starter }).then(function () {
+      saving = false;
+      if (dirty) flush(); else setStatus("saved");
+    }, function (e) {
+      saving = false; dirty = true;
+      if (e.status === 401) { setToken(""); return showLogin(); }
+      setStatus("error");
+      clearTimeout(retryTimer); retryTimer = setTimeout(flush, 5000);
+    });
+  }
+  window.addEventListener("beforeunload", function (e) { if (dirty || saving) { e.preventDefault(); e.returnValue = ""; } });
+
+  function showLogin(msg) {
+    ready = false;
+    $("#status").textContent = "Locked";
+    app.innerHTML = '<section><h2>Password</h2><p class="sub">Enter the password for this app.</p>' +
+      '<form id="loginForm"><div class="form-row"><label for="pw">Password<input type="password" id="pw" autocomplete="current-password" required></label>' +
+      '<button type="submit" class="btn primary">Unlock</button></div></form>' +
+      '<p class="msg err" id="loginMsg" role="status">' + esc(msg || "") + "</p></section>";
+    var el = $("#pw"); if (el) el.focus();
+  }
+  function boot() {
+    setStatus("loading");
+    api("GET", "/state").then(function (st) {
+      if (!st.seeded) {
+        S = starter(); ready = true; render(); touch();
+      } else {
+        S = { groups: st.groups, cards: st.cards, starter: !!st.starter };
+        ready = true; setStatus("saved"); render();
+      }
+    }, function (e) {
+      if (e.status === 401) return showLogin();
+      $("#status").textContent = "Offline";
+      app.innerHTML = '<section><h2>Can\'t load your cards</h2><p class="sub">' + esc(e.message) + '</p><button type="button" class="btn primary" data-act="reload">Try again</button></section>';
+    });
+  }
+
+  /* ---------- helpers ---------- */
+  function shuffle(a) { a = a.slice(); for (var i = a.length - 1; i > 0; i--) { var j = Math.floor(Math.random() * (i + 1)); var t = a[i]; a[i] = a[j]; a[j] = t; } return a; }
+  function groupName(id) { var g = S.groups.filter(function (x) { return x.id === id; })[0]; return g ? g.name : ""; }
+  function inGroup(c, sel) {
+    if (sel === "all") return true;
+    if (sel === "__none") return !c.g || !groupName(c.g);
+    return c.g === sel;
+  }
+  function pool(sel) { return S.cards.filter(function (c) { return inGroup(c, sel); }); }
+  function groupOptions(selected, withAll, withNone) {
+    var h = "";
+    if (withAll) h += '<option value="all"' + (selected === "all" ? " selected" : "") + ">All cards (" + S.cards.length + ")</option>";
+    S.groups.forEach(function (g) {
+      h += '<option value="' + esc(g.id) + '"' + (selected === g.id ? " selected" : "") + ">" + esc(g.name) + " (" + pool(g.id).length + ")</option>";
+    });
+    var none = pool("__none").length;
+    if (withNone === "always" || (withNone && none > 0)) h += '<option value="__none"' + (selected === "__none" ? " selected" : "") + ">Ungrouped (" + none + ")</option>";
+    return h;
+  }
+
+  /* answer checking */
+  function key(s) {
+    var k = String(s).normalize("NFC").toLowerCase().replace(/\([^)]*\)/g, " ").replace(/[.!?¿¡~…"“”'’]+/g, "").replace(/\s+/g, " ").trim();
+    k = k.replace(/^(to|a|an|the) /, "");
+    if (/[가-힣]/.test(k)) k = k.replace(/\s/g, "");
+    return k;
+  }
+  function accepted(text) {
+    var out = [key(text)];
+    String(text).split(/[\/;,]/).forEach(function (p) { out.push(key(p)); });
+    return out.filter(function (x, i) { return x && out.indexOf(x) === i; });
+  }
+  function isCorrect(card, dir, input) {
+    var u = key(input);
+    return !!u && accepted(dir === "ko-en" ? card.en : card.ko).indexOf(u) !== -1;
+  }
+
+  /* ---------- state of the screen ---------- */
+  var view = "practice", sess = null;
+  var ui = { filter: "all", editing: null, confirm: null, gEditing: null, gConfirm: null, lastGroup: "" };
+  var app = $("#app");
+
+  function go(v) { sess = null; view = v; render(); window.scrollTo(0, 0); }
+  function render() {
+    if (!ready) return;
+    document.querySelectorAll("nav [data-to]").forEach(function (b) { b.setAttribute("aria-current", b.dataset.to === view ? "page" : "false"); });
+    if (view === "practice") return sess ? renderSession() : renderSetup();
+    if (view === "cards") return renderCards();
+    renderGroups();
+  }
+  function starterNote() {
+    return S.starter ? '<div class="note"><span>The starter cards are examples. Edit or delete them whenever you like.</span><button type="button" class="btn sm" data-act="dismissStarter">Got it</button></div>' : "";
+  }
+
+  /* ---------- practice: setup ---------- */
+  function renderSetup() {
+    if (prefs.group !== "all" && prefs.group !== "__none" && !groupName(prefs.group)) prefs.group = "all";
+    var n = pool(prefs.group).length;
+    app.innerHTML =
+      '<section><h2>Practice</h2>' + starterNote() +
+      '<div class="setup-grid">' +
+      '<label for="pGroup">Group<select id="pGroup">' + groupOptions(prefs.group, true, true) + "</select></label>" +
+      '<fieldset class="seg"><legend>Direction</legend>' +
+      '<label for="dir-ko-en"><input type="radio" name="dir" id="dir-ko-en" value="ko-en"' + (prefs.dir === "ko-en" ? " checked" : "") + '> <span><span lang="ko">한국어</span> → English</span></label>' +
+      '<label for="dir-en-ko"><input type="radio" name="dir" id="dir-en-ko" value="en-ko"' + (prefs.dir === "en-ko" ? " checked" : "") + '> <span>English → <span lang="ko">한국어</span></span></label>' +
+      "</fieldset>" +
+      '<p class="sub">' + (n ? plural(n) + ", shuffled every round." : "This group has no cards yet. Add some in the Cards tab.") + "</p>" +
+      '<button type="button" class="btn primary big" data-act="start"' + (n ? "" : " disabled") + ">Start practice</button>" +
+      "</div></section>";
+  }
+
+  /* ---------- practice: session ---------- */
+  function startSession(cards, dir, label) {
+    sess = { source: cards, queue: shuffle(cards), i: 0, score: 0, missed: [], answered: false, dir: dir, label: label, ok: false };
+    view = "practice"; render();
+  }
+  function renderSession() {
+    var c = sess.queue[sess.i], n = sess.queue.length, ko = sess.dir === "ko-en";
+    sess.answered = false;
+    app.innerHTML =
+      '<section class="session">' +
+      '<div class="topline"><button type="button" class="link" data-act="setup">← End session</button><span class="count">' + (sess.i + 1) + " / " + n + " · " + sess.score + " correct</span></div>" +
+      '<div class="bar" aria-hidden="true"><i style="width:' + (sess.i / n * 100) + '%"></i></div>' +
+      '<div class="prompt"><span class="tag">' + (ko ? "Type the English" : "Type the Korean") + "</span>" +
+      '<div class="word ' + (ko ? "ko" : "en") + '" lang="' + (ko ? "ko" : "en") + '">' + esc(ko ? c.ko : c.en) + "</div></div>" +
+      '<form id="answerForm" autocomplete="off"><div class="answer-row">' +
+      '<input type="text" id="answer" lang="' + (ko ? "en" : "ko") + '" aria-label="' + (ko ? "English answer" : "Korean answer") + '" placeholder="' + (ko ? "English meaning" : "한국어로 쓰세요") + '" autocapitalize="off" autocorrect="off" spellcheck="false">' +
+      '<button type="submit" class="btn primary" id="checkBtn">Check</button>' +
+      '<button type="button" class="btn" id="skipBtn" data-act="skip">Don\'t know</button></div></form>' +
+      '<div id="feedback" aria-live="polite"></div></section>';
+    $("#answer").focus();
+  }
+  function showFeedback(userText, skipped) {
+    var c = sess.queue[sess.i], ko = sess.dir === "ko-en", target = ko ? c.en : c.ko, tl = ko ? "en" : "ko";
+    var last = sess.i === sess.queue.length - 1, h;
+    if (sess.ok) {
+      h = '<div class="fb good"><strong>' + (sess.overruled ? "Marked as correct" : "Correct") + '</strong><span class="ans" lang="' + tl + '">' + esc(target) + "</span></div>";
+    } else {
+      h = '<div class="fb bad"><strong>' + (skipped ? "The answer" : "Not quite") + '</strong><span class="ans" lang="' + tl + '">' + esc(target) + "</span>" +
+        (skipped ? "" : '<span class="you">You wrote: <span lang="' + (ko ? "en" : "ko") + '">' + esc(userText) + "</span></span>") +
+        (skipped ? "" : '<div class="fb-actions"><button type="button" class="btn sm" data-act="overrule">I was right</button></div>') + "</div>";
+    }
+    h += '<div class="fb-actions"><button type="button" class="btn primary" id="nextBtn" data-act="next">' + (last ? "See results" : "Next card") + "</button></div>";
+    $("#feedback").innerHTML = h;
+  }
+  function check(skipped) {
+    if (sess.answered) return;
+    var inp = $("#answer"), val = skipped ? "" : inp.value;
+    if (!skipped && !val.trim()) { inp.focus(); return; }
+    var c = sess.queue[sess.i];
+    sess.answered = true; sess.overruled = false; sess.lastInput = val;
+    sess.ok = !skipped && isCorrect(c, sess.dir, val);
+    if (sess.ok) sess.score++; else sess.missed.push(c);
+    inp.disabled = true; $("#checkBtn").disabled = true; $("#skipBtn").disabled = true;
+    $(".count").textContent = (sess.i + 1) + " / " + sess.queue.length + " · " + sess.score + " correct";
+    showFeedback(val, skipped);
+    $("#nextBtn").focus();
+  }
+  function renderResults() {
+    var n = sess.queue.length, m = sess.missed;
+    app.innerHTML =
+      '<section><h2>Round complete</h2>' +
+      '<div class="score">' + sess.score + " <small>of " + n + " correct</small></div>" +
+      '<p class="sub">' + esc(sess.label) + " · " + (sess.dir === "ko-en" ? "Korean → English" : "English → Korean") + "</p>" +
+      (m.length ? '<div><h3 style="font-size:1rem;margin-bottom:6px">To review</h3><ul class="list missed">' +
+        m.map(function (c) { return '<li class="row"><span class="ko" lang="ko">' + esc(c.ko) + '</span><span class="en">' + esc(c.en) + "</span></li>"; }).join("") + "</ul></div>" : '<p class="msg" style="color:var(--good)">No misses this round.</p>') +
+      '<div class="fb-actions">' +
+      (m.length ? '<button type="button" class="btn primary" data-act="redoMissed">Practice the ' + m.length + " missed</button>" : "") +
+      '<button type="button" class="btn' + (m.length ? "" : " primary") + '" data-act="again">Shuffle and restart</button>' +
+      '<button type="button" class="btn" data-act="setup">Change group or direction</button></div></section>';
+  }
+
+  /* ---------- cards ---------- */
+  function renderCards() {
+    if (ui.filter !== "all" && ui.filter !== "__none" && !groupName(ui.filter)) ui.filter = "all";
+    var gsel = ui.lastGroup && groupName(ui.lastGroup) ? ui.lastGroup : (ui.filter !== "all" && ui.filter !== "__none" ? ui.filter : "");
+    var opts = '<option value="">Ungrouped</option>' + S.groups.map(function (g) { return '<option value="' + esc(g.id) + '"' + (g.id === gsel ? " selected" : "") + ">" + esc(g.name) + "</option>"; }).join("");
+    app.innerHTML =
+      "<section><h2>Add a card</h2>" + starterNote() +
+      '<form id="addCard" autocomplete="off"><div class="form-row">' +
+      '<label for="ko">Korean<input type="text" id="ko" lang="ko" placeholder="안녕하세요" required></label>' +
+      '<label for="en">English<input type="text" id="en" placeholder="hello" required></label>' +
+      '<label for="grp">Group<select id="grp">' + opts + "</select></label>" +
+      '<button type="submit" class="btn primary">Add card</button></div></form>' +
+      '<p class="sub">Separate alternative English answers with a slash, like <em>rice / meal</em>. Any one of them counts.</p>' +
+      '<p class="msg" id="addMsg" role="status"></p></section>' +
+      '<section><div class="head-row"><h2 id="listTitle"></h2>' +
+      '<label for="cardFilter">Show<select id="cardFilter">' + groupOptions(ui.filter, true, true) + "</select></label></div>" +
+      '<ul class="list" id="cardList"></ul></section>';
+    renderCardList();
+  }
+  function renderCardList() {
+    var cards = pool(ui.filter);
+    $("#listTitle").textContent = "Your cards · " + cards.length;
+    if (!cards.length) { $("#cardList").innerHTML = '<li class="empty">No cards here yet. Add one above.</li>'; return; }
+    var gopts = function (sel) {
+      return '<option value="">Ungrouped</option>' + S.groups.map(function (g) { return '<option value="' + esc(g.id) + '"' + (g.id === sel ? " selected" : "") + ">" + esc(g.name) + "</option>"; }).join("");
+    };
+    $("#cardList").innerHTML = cards.map(function (c) {
+      var id = esc(c.id);
+      if (ui.editing === c.id) {
+        return '<li class="row edit"><form id="editCard" data-id="' + id + '" autocomplete="off"><div class="form-row">' +
+          '<label for="edit-ko">Korean<input type="text" id="edit-ko" lang="ko" value="' + esc(c.ko) + '" required></label>' +
+          '<label for="edit-en">English<input type="text" id="edit-en" value="' + esc(c.en) + '" required></label>' +
+          '<label for="edit-grp">Group<select id="edit-grp">' + gopts(c.g) + "</select></label></div>" +
+          '<div class="acts" style="margin-top:10px"><button type="submit" class="btn primary sm">Save</button><button type="button" class="btn sm" data-act="cancelEdit">Cancel</button></div></form></li>';
+      }
+      if (ui.confirm === c.id) {
+        return '<li class="row confirm"><p>Delete <strong lang="ko">' + esc(c.ko) + "</strong> (" + esc(c.en) + ")?</p>" +
+          '<div class="acts"><button type="button" class="btn danger sm" data-act="delCardYes" data-id="' + id + '">Delete</button><button type="button" class="btn sm" data-act="delCardNo">Keep</button></div></li>';
+      }
+      var gn = c.g ? groupName(c.g) : "";
+      return '<li class="row"><span class="ko" lang="ko">' + esc(c.ko) + '</span><span class="en">' + esc(c.en) + "</span>" +
+        '<div class="meta"><span class="chip">' + (gn ? esc(gn) : "Ungrouped") + "</span>" +
+        '<div class="acts"><button type="button" class="btn sm" data-act="editCard" data-id="' + id + '">Edit</button>' +
+        '<button type="button" class="btn sm" data-act="delCard" data-id="' + id + '">Delete</button></div></div></li>';
+    }).join("");
+  }
+
+  /* ---------- groups ---------- */
+  function renderGroups() {
+    var none = pool("__none").length;
+    var rows = S.groups.map(function (g) {
+      var id = esc(g.id), n = pool(g.id).length;
+      if (ui.gEditing === g.id) {
+        return '<li class="row edit"><form id="renameGroup" data-id="' + id + '" autocomplete="off"><div class="form-row">' +
+          '<label for="gname-edit">Group name<input type="text" id="gname-edit" value="' + esc(g.name) + '" required></label>' +
+          '<button type="submit" class="btn primary sm">Save</button><button type="button" class="btn sm" data-act="gCancel">Cancel</button></div></form></li>';
+      }
+      if (ui.gConfirm === g.id) {
+        return '<li class="row confirm"><p>Delete the group <strong>' + esc(g.name) + "</strong>? Its " + plural(n) + " will stay and become ungrouped.</p>" +
+          '<div class="acts"><button type="button" class="btn danger sm" data-act="gDelYes" data-id="' + id + '">Delete group</button><button type="button" class="btn sm" data-act="gDelNo">Keep</button></div></li>';
+      }
+      return '<li class="row"><strong>' + esc(g.name) + '</strong><span class="sub">' + plural(n) + "</span>" +
+        '<div class="meta"><span></span><div class="acts">' +
+        '<button type="button" class="btn sm" data-act="gPractice" data-id="' + id + '"' + (n ? "" : " disabled") + ">Practice</button>" +
+        '<button type="button" class="btn sm" data-act="gRename" data-id="' + id + '">Rename</button>' +
+        '<button type="button" class="btn sm" data-act="gDel" data-id="' + id + '">Delete</button></div></div></li>';
+    }).join("");
+    if (none) {
+      rows += '<li class="row"><strong>Ungrouped</strong><span class="sub">' + plural(none) + '</span><div class="meta"><span></span><div class="acts"><button type="button" class="btn sm" data-act="gPractice" data-id="__none">Practice</button></div></div></li>';
+    }
+    app.innerHTML =
+      "<section><h2>Groups</h2>" +
+      '<form id="addGroup" autocomplete="off"><div class="form-row">' +
+      '<label for="gname">New group<input type="text" id="gname" placeholder="Travel phrases" required></label>' +
+      '<button type="submit" class="btn primary">Create group</button></div></form>' +
+      '<p class="msg" id="gMsg" role="status"></p>' +
+      '<ul class="list">' + (rows || '<li class="empty">No groups yet. Create one above, then assign cards to it.</li>') + "</ul></section>";
+  }
+  function dupGroup(name, exceptId) {
+    var k = name.trim().toLowerCase();
+    return S.groups.some(function (g) { return g.id !== exceptId && g.name.trim().toLowerCase() === k; });
+  }
+
+  /* ---------- events ---------- */
+  document.addEventListener("click", function (e) {
+    var b = e.target.closest("[data-act]");
+    if (!b) return;
+    var a = b.dataset.act, id = b.dataset.id;
+    switch (a) {
+      case "reload": return location.reload();
+      case "nav": return go(b.dataset.to);
+      case "dismissStarter": S.starter = false; touch(); return render();
+      case "start":
+        var cards = pool(prefs.group);
+        if (!cards.length) return;
+        return startSession(cards, prefs.dir, prefs.group === "all" ? "All cards" : prefs.group === "__none" ? "Ungrouped" : groupName(prefs.group));
+      case "setup": sess = null; return render();
+      case "skip": return check(true);
+      case "overrule":
+        if (!sess || sess.ok) return;
+        var cur = sess.queue[sess.i];
+        sess.ok = true; sess.overruled = true; sess.score++;
+        sess.missed = sess.missed.filter(function (c) { return c.id !== cur.id; });
+        $(".count").textContent = (sess.i + 1) + " / " + sess.queue.length + " · " + sess.score + " correct";
+        showFeedback(sess.lastInput, false); return $("#nextBtn").focus();
+      case "next":
+        sess.i++;
+        if (sess.i >= sess.queue.length) { return renderResults(); }
+        return renderSession();
+      case "again": return startSession(sess.source, sess.dir, sess.label);
+      case "redoMissed": return startSession(sess.missed.slice(), sess.dir, sess.label + " (missed)");
+      case "editCard": ui.editing = id; ui.confirm = null; renderCardList(); var k = $("#edit-ko"); if (k) k.focus(); return;
+      case "cancelEdit": ui.editing = null; return renderCardList();
+      case "delCard": ui.confirm = id; ui.editing = null; return renderCardList();
+      case "delCardNo": ui.confirm = null; return renderCardList();
+      case "delCardYes":
+        S.cards = S.cards.filter(function (c) { return c.id !== id; }); ui.confirm = null; touch();
+        return renderCards();
+      case "gRename": ui.gEditing = id; ui.gConfirm = null; renderGroups(); var gi = $("#gname-edit"); if (gi) gi.focus(); return;
+      case "gCancel": ui.gEditing = null; return renderGroups();
+      case "gDel": ui.gConfirm = id; ui.gEditing = null; return renderGroups();
+      case "gDelNo": ui.gConfirm = null; return renderGroups();
+      case "gDelYes":
+        S.groups = S.groups.filter(function (g) { return g.id !== id; });
+        S.cards.forEach(function (c) { if (c.g === id) c.g = ""; });
+        if (ui.filter === id) ui.filter = "all";
+        if (prefs.group === id) { prefs.group = "all"; savePrefs(); }
+        ui.gConfirm = null; touch(); return renderGroups();
+      case "gPractice": prefs.group = id; savePrefs(); return go("practice");
+    }
+  });
+
+  document.addEventListener("change", function (e) {
+    var t = e.target;
+    if (t.id === "pGroup") { prefs.group = t.value; savePrefs(); renderSetup(); $("#pGroup").focus(); }
+    else if (t.name === "dir") { prefs.dir = t.value; savePrefs(); }
+    else if (t.id === "cardFilter") { ui.filter = t.value; ui.editing = null; ui.confirm = null; renderCardList(); }
+    else if (t.id === "grp") { ui.lastGroup = t.value; }
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (e.key === "Enter" && e.target.id === "answer" && (e.isComposing || e.keyCode === 229)) { e.preventDefault(); e.stopPropagation(); }
+  }, true);
+
+  document.addEventListener("submit", function (e) {
+    e.preventDefault();
+    var f = e.target, msg;
+    if (f.id === "loginForm") {
+      api("POST", "/login", { password: $("#pw").value }).then(function (r) { setToken(r.token); boot(); },
+        function (err) { $("#loginMsg").textContent = err.message; });
+      return;
+    }
+    if (f.id === "answerForm") { return check(false); }
+    if (f.id === "addCard") {
+      var ko = $("#ko").value.trim(), en = $("#en").value.trim(), g = $("#grp").value;
+      if (!ko || !en) return;
+      S.cards.unshift({ id: uid(), ko: ko, en: en, g: g });
+      ui.lastGroup = g; touch();
+      $("#ko").value = ""; $("#en").value = "";
+      renderCardList();
+      $("#listTitle").textContent = "Your cards · " + pool(ui.filter).length;
+      $("#cardFilter").innerHTML = groupOptions(ui.filter, true, true);
+      msg = $("#addMsg"); msg.textContent = "Added " + ko + " — " + en; $("#ko").focus();
+      return;
+    }
+    if (f.id === "editCard") {
+      var c = S.cards.filter(function (x) { return x.id === f.dataset.id; })[0];
+      var nk = $("#edit-ko").value.trim(), ne = $("#edit-en").value.trim();
+      if (c && nk && ne) { c.ko = nk; c.en = ne; c.g = $("#edit-grp").value; touch(); }
+      ui.editing = null; return renderCards();
+    }
+    if (f.id === "addGroup") {
+      var name = $("#gname").value.trim(); msg = $("#gMsg");
+      if (!name) return;
+      if (dupGroup(name)) { msg.className = "msg err"; msg.textContent = "You already have a group called " + name + "."; return; }
+      S.groups.push({ id: uid(), name: name }); touch(); renderGroups();
+      $("#gMsg").textContent = "Created " + name + "."; $("#gname").focus();
+      return;
+    }
+    if (f.id === "renameGroup") {
+      var gr = S.groups.filter(function (x) { return x.id === f.dataset.id; })[0], nn = $("#gname-edit").value.trim();
+      if (gr && nn && !dupGroup(nn, gr.id)) { gr.name = nn; touch(); ui.gEditing = null; return renderGroups(); }
+      return;
+    }
+  });
+
+  boot();
+})();
+</script>
+
+</body>
+</html>
