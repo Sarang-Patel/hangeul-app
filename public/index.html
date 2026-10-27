@@ -150,6 +150,18 @@ input[type="file"] { max-width: 100%; font-size: .95rem; padding: 8px 0; }
 .fb .ans[lang="ko"] { font-family: var(--font-han); font-size: 1.4rem; font-weight: 700; }
 .fb .you { color: var(--ink); font-size: .92rem; overflow-wrap: anywhere; }
 .fb-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+.choices { display: grid; gap: 10px; }
+@media (min-width: 560px) { .choices { grid-template-columns: 1fr 1fr; } }
+.opt { display: flex; align-items: center; gap: 12px; text-align: left; background: var(--surface); border: 1px solid var(--line); border-radius: 4px; padding: 12px 14px; min-height: 56px; min-width: 0; cursor: pointer; font-size: 1.05rem; }
+.opt:hover:not(:disabled) { border-color: var(--accent); }
+.opt:disabled { cursor: default; color: var(--ink); }
+.opt .n { flex: none; width: 24px; height: 24px; border: 1px solid currentColor; border-radius: 4px; display: grid; place-items: center; font-size: .8rem; color: var(--muted); font-variant-numeric: tabular-nums; }
+.opt .t { min-width: 0; overflow-wrap: anywhere; }
+.opt .t[lang="ko"] { font-family: var(--font-han); font-size: 1.3rem; font-weight: 700; }
+.opt.good { background: var(--good-soft); border-color: var(--good); color: var(--good); }
+.opt.bad { background: var(--bad-soft); border-color: var(--bad); color: var(--bad); }
+.opt.good .n, .opt.bad .n { color: inherit; }
+.opt.dim { opacity: .55; }
 .score { font-size: 2.6rem; font-weight: 600; font-variant-numeric: tabular-nums; line-height: 1.1; }
 .score small { font-size: 1rem; color: var(--muted); font-weight: 500; }
 .missed .ko { font-family: var(--font-han); font-weight: 700; font-size: 1.15rem; }
@@ -197,8 +209,8 @@ input[type="file"] { max-width: 100%; font-size: .95rem; padding: 8px 0; }
   }
   var S = { groups: [], cards: [], starter: false };
   var ready = false;
-  var prefs = { group: "all", dir: "ko-en" };
-  try { var p = JSON.parse(localStorage.getItem(PKEY)); if (p) { prefs.group = p.group || "all"; prefs.dir = p.dir === "en-ko" ? "en-ko" : "ko-en"; } } catch (e) {}
+  var prefs = { group: "all", dir: "ko-en", mode: "type" };
+  try { var p = JSON.parse(localStorage.getItem(PKEY)); if (p) { prefs.group = p.group || "all"; prefs.dir = p.dir === "en-ko" ? "en-ko" : "ko-en"; prefs.mode = p.mode === "choice" ? "choice" : "type"; } } catch (e) {}
   function savePrefs() { try { localStorage.setItem(PKEY, JSON.stringify(prefs)); } catch (e) {} }
 
   /* ---------- server API ---------- */
@@ -320,48 +332,85 @@ input[type="file"] { max-width: 100%; font-size: .95rem; padding: 8px 0; }
   }
 
   /* ---------- practice: setup ---------- */
+  function answerOf(c, dir) { return dir === "ko-en" ? c.en : c.ko; }
+  function choiceOk(dir) {
+    var seen = {}, n = 0;
+    S.cards.forEach(function (c) { var k = key(answerOf(c, dir)); if (k && !seen[k]) { seen[k] = 1; n++; } });
+    return n >= 2;
+  }
   function renderSetup() {
     if (prefs.group !== "all" && prefs.group !== "__none" && !groupName(prefs.group)) prefs.group = "all";
-    var n = pool(prefs.group).length;
+    var n = pool(prefs.group).length, choice = prefs.mode === "choice", canStart = !choice || choiceOk(prefs.dir);
     app.innerHTML =
       '<section><h2>Practice</h2>' + starterNote() +
       '<div class="setup-grid">' +
       '<label for="pGroup">Group<select id="pGroup">' + groupOptions(prefs.group, true, true) + "</select></label>" +
+      '<fieldset class="seg"><legend>Mode</legend>' +
+      '<label for="mode-type"><input type="radio" name="mode" id="mode-type" value="type"' + (!choice ? " checked" : "") + '> <span>Type the answer</span></label>' +
+      '<label for="mode-choice"><input type="radio" name="mode" id="mode-choice" value="choice"' + (choice ? " checked" : "") + '> <span>Multiple choice (4 options)</span></label>' +
+      "</fieldset>" +
       '<fieldset class="seg"><legend>Direction</legend>' +
       '<label for="dir-ko-en"><input type="radio" name="dir" id="dir-ko-en" value="ko-en"' + (prefs.dir === "ko-en" ? " checked" : "") + '> <span><span lang="ko">한국어</span> → English</span></label>' +
       '<label for="dir-en-ko"><input type="radio" name="dir" id="dir-en-ko" value="en-ko"' + (prefs.dir === "en-ko" ? " checked" : "") + '> <span>English → <span lang="ko">한국어</span></span></label>' +
       "</fieldset>" +
       '<p class="sub">' + (n ? plural(n) + ", shuffled every round." : "This group has no cards yet. Add some in the Cards tab.") + "</p>" +
-      '<button type="button" class="btn primary big" data-act="start"' + (n ? "" : " disabled") + ">Start practice</button>" +
+      (choice && !canStart ? '<p class="warn">Multiple choice needs at least 2 cards with different answers. Add more cards first.</p>' :
+        choice && S.cards.length < 4 ? '<p class="sub">You have ' + plural(S.cards.length) + " in total, so some questions will show fewer than 4 options.</p>" :
+        choice ? '<p class="sub">The wrong options come from your other cards, starting with the same group.</p>' : "") +
+      '<button type="button" class="btn primary big" data-act="start"' + (n && canStart ? "" : " disabled") + ">Start practice</button>" +
       "</div></section>";
   }
 
   /* ---------- practice: session ---------- */
-  function startSession(cards, dir, label) {
-    sess = { source: cards, queue: shuffle(cards), i: 0, score: 0, missed: [], answered: false, dir: dir, label: label, ok: false };
+  function startSession(cards, dir, label, mode) {
+    sess = { source: cards, queue: shuffle(cards), i: 0, score: 0, missed: [], answered: false, dir: dir, label: label, ok: false, mode: mode || "type", opts: null };
     view = "practice"; render();
   }
+  function makeOptions(c) {
+    var dir = sess.dir, target = answerOf(c, dir), tk = key(target), tAcc = accepted(target), seen = {}, out = [];
+    seen[tk] = 1;
+    var add = function (list) {
+      shuffle(list).forEach(function (x) {
+        if (out.length >= 3 || x.id === c.id) return;
+        var a = answerOf(x, dir), k = key(a);
+        if (!k || seen[k] || tAcc.indexOf(k) !== -1 || accepted(a).indexOf(tk) !== -1) return;
+        seen[k] = 1; out.push({ text: a, correct: false });
+      });
+    };
+    add(sess.source); add(S.cards);
+    out.push({ text: target, correct: true });
+    return shuffle(out);
+  }
   function renderSession() {
-    var c = sess.queue[sess.i], n = sess.queue.length, ko = sess.dir === "ko-en";
+    var c = sess.queue[sess.i], n = sess.queue.length, ko = sess.dir === "ko-en", tl = ko ? "en" : "ko";
     sess.answered = false;
+    sess.opts = null;
+    if (sess.mode === "choice") { var o = makeOptions(c); if (o.length >= 2) sess.opts = o; }
+    var opts = sess.opts;
     app.innerHTML =
       '<section class="session">' +
       '<div class="topline"><button type="button" class="link" data-act="setup">← End session</button><span class="count">' + (sess.i + 1) + " / " + n + " · " + sess.score + " correct</span></div>" +
       '<div class="bar" aria-hidden="true"><i style="width:' + (sess.i / n * 100) + '%"></i></div>' +
-      '<div class="prompt"><span class="tag">' + (ko ? "Type the English" : "Type the Korean") + "</span>" +
+      '<div class="prompt"><span class="tag">' + (opts ? (ko ? "Pick the English" : "Pick the Korean") : (ko ? "Type the English" : "Type the Korean")) + "</span>" +
       '<div class="word ' + (ko ? "ko" : "en") + '" lang="' + (ko ? "ko" : "en") + '">' + esc(ko ? c.ko : c.en) + "</div></div>" +
-      '<form id="answerForm" autocomplete="off"><div class="answer-row">' +
-      '<input type="text" id="answer" lang="' + (ko ? "en" : "ko") + '" aria-label="' + (ko ? "English answer" : "Korean answer") + '" placeholder="' + (ko ? "English meaning" : "한국어로 쓰세요") + '" autocapitalize="off" autocorrect="off" spellcheck="false">' +
-      '<button type="submit" class="btn primary" id="checkBtn">Check</button>' +
-      '<button type="button" class="btn" id="skipBtn" data-act="skip">Don\'t know</button></div></form>' +
+      (opts ?
+        '<div class="choices" role="group" aria-label="Answer options">' + opts.map(function (x, i) {
+          return '<button type="button" class="opt" data-act="pick" data-i="' + i + '"><span class="n" aria-hidden="true">' + (i + 1) + '</span><span class="t" lang="' + tl + '">' + esc(x.text) + "</span></button>";
+        }).join("") + "</div>" :
+        '<form id="answerForm" autocomplete="off"><div class="answer-row">' +
+        '<input type="text" id="answer" lang="' + (ko ? "en" : "ko") + '" aria-label="' + (ko ? "English answer" : "Korean answer") + '" placeholder="' + (ko ? "English meaning" : "한국어로 쓰세요") + '" autocapitalize="off" autocorrect="off" spellcheck="false">' +
+        '<button type="submit" class="btn primary" id="checkBtn">Check</button>' +
+        '<button type="button" class="btn" id="skipBtn" data-act="skip">Don\'t know</button></div></form>') +
       '<div id="feedback" aria-live="polite"></div></section>';
-    $("#answer").focus();
+    if (!opts) $("#answer").focus();
   }
-  function showFeedback(userText, skipped) {
+  function showFeedback(userText, skipped, mc) {
     var c = sess.queue[sess.i], ko = sess.dir === "ko-en", target = ko ? c.en : c.ko, tl = ko ? "en" : "ko";
     var last = sess.i === sess.queue.length - 1, h;
     if (sess.ok) {
       h = '<div class="fb good"><strong>' + (sess.overruled ? "Marked as correct" : "Correct") + '</strong><span class="ans" lang="' + tl + '">' + esc(target) + "</span></div>";
+    } else if (mc) {
+      h = '<div class="fb bad"><strong>Not quite</strong><span class="ans" lang="' + tl + '">' + esc(target) + "</span></div>";
     } else {
       h = '<div class="fb bad"><strong>' + (skipped ? "The answer" : "Not quite") + '</strong><span class="ans" lang="' + tl + '">' + esc(target) + "</span>" +
         (skipped ? "" : '<span class="you">You wrote: <span lang="' + (ko ? "en" : "ko") + '">' + esc(userText) + "</span></span>") +
@@ -369,6 +418,21 @@ input[type="file"] { max-width: 100%; font-size: .95rem; padding: 8px 0; }
     }
     h += '<div class="fb-actions"><button type="button" class="btn primary" id="nextBtn" data-act="next">' + (last ? "See results" : "Next card") + "</button></div>";
     $("#feedback").innerHTML = h;
+  }
+  function pickOption(i) {
+    if (!sess || sess.answered || !sess.opts || !sess.opts[i]) return;
+    var c = sess.queue[sess.i];
+    sess.answered = true; sess.overruled = false; sess.ok = sess.opts[i].correct;
+    if (sess.ok) sess.score++; else sess.missed.push(c);
+    document.querySelectorAll(".opt").forEach(function (btn, j) {
+      btn.disabled = true;
+      if (sess.opts[j].correct) btn.classList.add("good");
+      else if (j === i) btn.classList.add("bad");
+      else btn.classList.add("dim");
+    });
+    $(".count").textContent = (sess.i + 1) + " / " + sess.queue.length + " · " + sess.score + " correct";
+    showFeedback("", false, true);
+    $("#nextBtn").focus();
   }
   function check(skipped) {
     if (sess.answered) return;
@@ -388,13 +452,13 @@ input[type="file"] { max-width: 100%; font-size: .95rem; padding: 8px 0; }
     app.innerHTML =
       '<section><h2>Round complete</h2>' +
       '<div class="score">' + sess.score + " <small>of " + n + " correct</small></div>" +
-      '<p class="sub">' + esc(sess.label) + " · " + (sess.dir === "ko-en" ? "Korean → English" : "English → Korean") + "</p>" +
+      '<p class="sub">' + esc(sess.label) + " · " + (sess.dir === "ko-en" ? "Korean → English" : "English → Korean") + (sess.mode === "choice" ? " · Multiple choice" : "") + "</p>" +
       (m.length ? '<div><h3 style="font-size:1rem;margin-bottom:6px">To review</h3><ul class="list missed">' +
         m.map(function (c) { return '<li class="row"><span class="ko" lang="ko">' + esc(c.ko) + '</span><span class="en">' + esc(c.en) + "</span></li>"; }).join("") + "</ul></div>" : '<p class="msg" style="color:var(--good)">No misses this round.</p>') +
       '<div class="fb-actions">' +
       (m.length ? '<button type="button" class="btn primary" data-act="redoMissed">Practice the ' + m.length + " missed</button>" : "") +
       '<button type="button" class="btn' + (m.length ? "" : " primary") + '" data-act="again">Shuffle and restart</button>' +
-      '<button type="button" class="btn" data-act="setup">Change group or direction</button></div></section>';
+      '<button type="button" class="btn" data-act="setup">Change group, mode or direction</button></div></section>';
   }
 
   /* ---------- cards ---------- */
@@ -617,7 +681,8 @@ input[type="file"] { max-width: 100%; font-size: .95rem; padding: 8px 0; }
       case "start":
         var cards = pool(prefs.group);
         if (!cards.length) return;
-        return startSession(cards, prefs.dir, prefs.group === "all" ? "All cards" : prefs.group === "__none" ? "Ungrouped" : groupName(prefs.group));
+        if (prefs.mode === "choice" && !choiceOk(prefs.dir)) return;
+        return startSession(cards, prefs.dir, prefs.group === "all" ? "All cards" : prefs.group === "__none" ? "Ungrouped" : groupName(prefs.group), prefs.mode);
       case "setup": sess = null; return render();
       case "skip": return check(true);
       case "overrule":
@@ -631,8 +696,9 @@ input[type="file"] { max-width: 100%; font-size: .95rem; padding: 8px 0; }
         sess.i++;
         if (sess.i >= sess.queue.length) { return renderResults(); }
         return renderSession();
-      case "again": return startSession(sess.source, sess.dir, sess.label);
-      case "redoMissed": return startSession(sess.missed.slice(), sess.dir, sess.label + " (missed)");
+      case "again": return startSession(sess.source, sess.dir, sess.label, sess.mode);
+      case "pick": return pickOption(parseInt(b.dataset.i, 10));
+      case "redoMissed": return startSession(sess.missed.slice(), sess.dir, sess.label + " (missed)", sess.mode);
       case "editCard": ui.editing = id; ui.confirm = null; renderCardList(); var k = $("#edit-ko"); if (k) k.focus(); return;
       case "cancelEdit": ui.editing = null; return renderCardList();
       case "delCard": ui.confirm = id; ui.editing = null; return renderCardList();
@@ -657,7 +723,10 @@ input[type="file"] { max-width: 100%; font-size: .95rem; padding: 8px 0; }
   document.addEventListener("change", function (e) {
     var t = e.target;
     if (t.id === "pGroup") { prefs.group = t.value; savePrefs(); renderSetup(); $("#pGroup").focus(); }
-    else if (t.name === "dir") { prefs.dir = t.value; savePrefs(); }
+    else if (t.name === "dir" || t.name === "mode") {
+      prefs[t.name] = t.value; savePrefs(); renderSetup();
+      var again = $("#" + t.name + "-" + t.value); if (again) again.focus();
+    }
     else if (t.id === "cardFilter") { ui.filter = t.value; ui.editing = null; ui.confirm = null; renderCardList(); }
     else if (t.id === "grp") { ui.lastGroup = t.value; }
     else if (t.id === "importFile") {
@@ -668,6 +737,12 @@ input[type="file"] { max-width: 100%; font-size: .95rem; padding: 8px 0; }
       file.text().then(function (txt) { $("#importText").value = txt; runPreview(); },
         function () { $("#importMsg").textContent = "Could not read that file."; });
     }
+  });
+
+  document.addEventListener("keydown", function (e) {
+    if (!sess || !sess.opts || sess.answered || view !== "practice" || e.ctrlKey || e.metaKey || e.altKey) return;
+    var num = parseInt(e.key, 10);
+    if (num >= 1 && num <= sess.opts.length) { e.preventDefault(); pickOption(num - 1); }
   });
 
   document.addEventListener("keydown", function (e) {
