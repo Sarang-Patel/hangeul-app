@@ -1,17 +1,28 @@
 {
   "name": "hangeul-practice",
   "version": "1.0.0",
-  "description": "Korean flashcard app with an Express API and MongoDB storage",
+  "description": "Korean flashcard app: React front end, Express API, MongoDB storage",
   "main": "server.js",
   "private": true,
-  "engines": { "node": ">=18" },
+  "engines": {
+    "node": ">=18"
+  },
   "scripts": {
-    "start": "node server.js",
-    "dev": "node --watch server.js"
+    "dev": "vite",
+    "dev:server": "node --watch server.js",
+    "build": "vite build",
+    "preview": "vite preview",
+    "start": "node server.js"
   },
   "dependencies": {
     "express": "^4.21.2",
     "mongodb": "^6.12.0",
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
     "serverless-http": "^3.2.0"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-react": "^4.7.0",
+    "vite": "^6.3.5"
   }
 }

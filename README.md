@@ -1,61 +1,86 @@
 # Hangeul Practice
 
-Korean flashcards with groups and shuffled practice (Korean → English or English → Korean).
-Node + Express API, MongoDB storage, plain HTML/JS front end.
+Korean flashcards with groups, typed and multiple-choice practice, file import, and pure Korean numbers (0–99).
+React (Vite) front end, Node + Express API, MongoDB storage.
 
 ```
-public/index.html          the app (no build step)
-app.js                     Express API (/api/state, /api/login, /api/health)
-server.js                  starts the API and serves public/ (Render, Railway, Fly, VPS)
-netlify/functions/api.js   same API as a Netlify Function
-netlify.toml               Netlify settings
+index.html                  Vite entry page
+vite.config.mjs             Vite config (dev proxy: /api -> :3000)
+src/
+  main.jsx, App.jsx         app shell and tabs
+  store.jsx                 cards/groups state, loading and debounced saving
+  api.js                    calls to /api
+  hooks.js                  per-device preferences (localStorage)
+  components/               PracticeTab, NumbersTab, CardsTab, ImportPanel, GroupsTab,
+                            Session, Results, RunFlow, Login, Common
+  lib/                      numbers.js (native numbers), questions.js (builds questions),
+                            answers.js, importer.js, selectors.js, starter.js, util.js
+  styles.css
+app.js                      Express API (/api/state, /api/login, /api/health)
+server.js                   serves dist/ and the API (Render, Railway, Fly, VPS)
+netlify/functions/api.js    same API as a Netlify Function
+netlify.toml                Netlify build settings
 ```
 
-## 1. Create the database (MongoDB Atlas, free)
+## Adding a new kind of practice
 
-1. Sign up at mongodb.com/atlas and create a free **M0** cluster.
-2. **Database Access** → add a user with a password (read and write to any database).
-3. **Network Access** → add `0.0.0.0/0`. Hosts like Render and Netlify use changing IPs, so Atlas can't allow a fixed one. The database user's password is what protects it.
-4. **Connect → Drivers** → copy the connection string and put your password in it. This is your `MONGODB_URI`.
+Every practice type is a list of questions (shape documented at the top of `src/lib/questions.js`).
+Write a builder that returns that list, then render `<RunFlow build={...} renderSetup={...} />`
+as `NumbersTab.jsx` does. Session, results, retry-missed and keyboard handling come for free.
 
-Collections (`cards`, `groups`, `meta`) are created automatically in the `hangeul` database.
+## 1. Database (MongoDB Atlas, free)
+
+1. Create a free **M0** cluster at mongodb.com/atlas.
+2. **Database Access** → add a user with a password.
+3. **Network Access** → add `0.0.0.0/0` (hosts like Netlify and Render use changing IPs).
+4. **Connect → Drivers** → copy the connection string and put your password in it. This is `MONGODB_URI`.
 
 ## 2. Environment variables
 
 | Name | Required | Purpose |
 |---|---|---|
 | `MONGODB_URI` | yes | Atlas connection string |
-| `APP_PASSWORD` | recommended | Password screen for the whole app. If unset, anyone with the URL can edit your cards. |
+| `APP_PASSWORD` | recommended | Password screen for the whole app |
 | `MONGODB_DB` | no | Database name (default `hangeul`) |
-| `TOKEN_SECRET` | no | Separate secret for signing login tokens (defaults to `APP_PASSWORD`) |
+| `TOKEN_SECRET` | no | Separate secret for login tokens |
 
 ## 3a. Run locally
 
 ```bash
 npm install
-cp .env.example .env      # fill in the values
+cp .env.example .env            # fill in the values
 export $(grep -v '^#' .env | xargs)
-npm start                 # http://localhost:3000
+
+# development: two terminals
+npm run dev:server              # API on http://localhost:3000
+npm run dev                     # React app with hot reload on http://localhost:5173
+
+# or production style: one process
+npm run build
+npm start                       # http://localhost:3000
 ```
 
-## 3b. Deploy on Netlify
+## 3b. Netlify
 
-1. Push this folder to a GitHub repo.
-2. Netlify → **Add new site → Import from Git**. It reads `netlify.toml`, so leave the build command empty.
-3. **Site settings → Environment variables** → add `MONGODB_URI` and `APP_PASSWORD`.
-4. Deploy. The page is served from `public/` and `/api/*` goes to the function.
+Import the repo. `netlify.toml` sets everything:
 
-## 3c. Deploy on Render (or Railway, Fly, any Node host)
+- Build command: `npm run build`
+- Publish directory: `dist`
+- Functions directory: `netlify/functions`
 
-1. Push to GitHub, then Render → **New → Web Service**.
-2. Build command: `npm install`. Start command: `npm start`.
-3. Add `MONGODB_URI` and `APP_PASSWORD` as environment variables.
+Add `MONGODB_URI` and `APP_PASSWORD` under Site settings → Environment variables.
 
-On Render's free plan the service sleeps when idle, so the first load after a pause takes about 30 seconds.
+## 3c. Render (or Railway, Fly, any Node host)
+
+- Build command: `npm install --include=dev && npm run build`
+- Start command: `npm start`
+- Environment variables: `MONGODB_URI`, `APP_PASSWORD`
+
+The build needs the dev dependencies (Vite), which is why `--include=dev` is there.
 
 ## Notes
 
-- The browser sends the full card list to the server, which saves it with per-card upserts and deletes. Saving happens about half a second after each change.
-- If you use the app on two devices at once, the last save wins. Reload before editing on the other device.
+- Saving happens about half a second after each change. The browser sends the full card list and the server upserts and deletes per card.
+- If you use the app on two devices at once, the last save wins.
 - Limits: 5,000 cards, 200 groups, 200 characters per side of a card.
-- Login attempts are limited to 10 per minute per IP (per server instance on Netlify).
+- Pure Korean has no word for zero. The app uses 영 (and accepts 공) and says so on that question.
