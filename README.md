@@ -1,6 +1,7 @@
 # Hangeul Practice
 
-Korean flashcards with groups, typed and multiple-choice practice, file import, and pure Korean numbers (0–99).
+Korean flashcards with groups, typed and multiple-choice practice, file import, pure Korean numbers (0–99),
+and alphabet practice (letters, syllables, words).
 React (Vite) front end, Node + Express API, MongoDB storage.
 
 ```
@@ -11,9 +12,10 @@ src/
   store.jsx                 cards/groups state, loading and debounced saving
   api.js                    calls to /api
   hooks.js                  per-device preferences (localStorage)
-  components/               PracticeTab, NumbersTab, CardsTab, ImportPanel, GroupsTab,
+  components/               PracticeTab, NumbersTab, AlphabetTab, CardsTab, ImportPanel, GroupsTab,
                             Session, Results, RunFlow, Login, Common
-  lib/                      numbers.js (native numbers), questions.js (builds questions),
+  lib/                      numbers.js (native numbers), hangul.js (letters, syllables, words),
+                            questions.js (builds questions),
                             answers.js, importer.js, selectors.js, starter.js, util.js
   styles.css
 app.js                      Express API (/api/state, /api/login, /api/health)

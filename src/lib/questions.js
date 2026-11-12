@@ -110,3 +110,53 @@ export function buildNumberQuestions(numbers, dir) {
     };
   });
 }
+
+/* ---------- alphabet: letters, syllables, words (multiple choice, Korean -> romanization) ---------- */
+
+const tokens = (roman) => roman.split(" / ");
+// "g / k" and "k" share the token "k", so they must not appear together as options.
+const clashes = (a, b) => tokens(a).some((t) => tokens(b).includes(t));
+
+function similarity(a, b) {
+  if (a.kind === "word") return a.parts.reduce((n, p, i) => n + (b.parts[i] === p ? 1 : 0), 0) + (a.parts.length === b.parts.length ? 1 : 0);
+  return a.parts.reduce((n, p, i) => n + (p && b.parts[i] === p ? 1 : 0), 0);
+}
+
+function makeAlphabetOptions(item, pool) {
+  const others = pool.filter((p) => p.id !== item.id && !clashes(p.roman, item.roman));
+  const sameKind = others.filter((p) => p.kind === item.kind);
+  const base = sameKind.length >= 3 ? sameKind : others;
+  // Look-alikes first (shared initial, vowel, final or syllable), with a random tie-break, plus one random pick.
+  const ranked = shuffle(base)
+    .map((p) => ({ p, score: similarity(item, p) }))
+    .sort((x, y) => y.score - x.score)
+    .map((x) => x.p);
+  const wrong = [];
+  const seen = new Set([item.roman]);
+  const take = (p) => {
+    if (wrong.length >= 3 || seen.has(p.roman) || wrong.some((w) => clashes(w.text, p.roman))) return;
+    seen.add(p.roman);
+    wrong.push({ text: p.roman, correct: false });
+  };
+  ranked.slice(0, 2).forEach(take);
+  shuffle(ranked).forEach(take); // fills the rest, including the random pick
+  return shuffle([...wrong, { text: item.roman, correct: true }]);
+}
+
+// items: what to ask (already a random sample). pool: everything in the set, used for wrong options.
+export function buildAlphabetQuestions(items, pool) {
+  return shuffle(items).map((item) => ({
+    id: item.id,
+    item,
+    tag: item.kind === "consonant" || item.kind === "vowel" ? "Pick the sound" : "Pick the romanization",
+    prompt: item.text,
+    promptLang: "ko",
+    answer: item.roman,
+    answerLang: "en",
+    note: item.note,
+    review: { left: item.text, leftLang: "ko", right: item.roman, rightLang: "en" },
+    input: { lang: "en", label: "Romanization", placeholder: "", inputMode: "text" },
+    check: (text) => key(text) === key(item.roman),
+    options: makeAlphabetOptions(item, pool),
+  }));
+}

@@ -170,3 +170,17 @@ h2 .sub { font-weight: 400; }
 .chart th { color: var(--muted); font-variant-numeric: tabular-nums; width: 3em; }
 .chart td[lang="ko"] { font-family: var(--font-han); font-size: 1.1rem; font-weight: 700; }
 .chart td.alt[lang="ko"] { color: var(--muted); font-weight: 400; }
+
+/* ---- alphabet ---- */
+nav { overflow-x: auto; overflow-y: hidden; scrollbar-width: none; }
+nav::-webkit-scrollbar { display: none; }
+nav button { padding-inline: 9px; font-size: .95rem; white-space: nowrap; flex: none; }
+.chart.letters { grid-template-columns: 1fr; }
+@media (min-width: 640px) { .chart.letters { grid-template-columns: 1fr 1fr; } }
+.chart.letters th[lang="ko"] { font-family: var(--font-han); font-size: 1.3rem; font-weight: 700; color: var(--ink); width: 2.2em; }
+.chart.letters td { white-space: nowrap; font-weight: 600; }
+.chart.letters td.alt { white-space: normal; font-weight: 400; color: var(--muted); font-size: .85rem; }
+@media (max-width: 420px) {
+  nav { gap: 0; }
+  nav button { padding-inline: 7px; font-size: .9rem; }
+}
