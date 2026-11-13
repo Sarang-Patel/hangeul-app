@@ -1,4 +1,4 @@
-// Pure Korean numbers 0-99, in both directions.
+// Pure Korean (native) numbers 0-99, in both directions.
 import { buildNumberQuestions } from "../lib/questions.js";
 import { shuffle } from "../lib/util.js";
 import { NUMBER_DIRECTIONS, NUMBER_RANGES, REFERENCE } from "../lib/numbers.js";
@@ -12,7 +12,7 @@ const COUNTS = [
   { value: "all", label: "Every number in the range" },
 ];
 
-export default function NumbersTab({ prefs, setPrefs }) {
+export default function PureKoreanTab({ prefs, setPrefs }) {
   return <RunFlow build={(config) => buildNumberQuestions(config.items, config.dir)} renderSetup={(start) => <Setup prefs={prefs} setPrefs={setPrefs} onStart={start} />} />;
 }
 
@@ -24,7 +24,7 @@ function Setup({ prefs, setPrefs, onStart }) {
 
   function start() {
     const pickedNumbers = shuffle(available).slice(0, asked);
-    onStart({ items: pickedNumbers, dir: direction.id, name: `Numbers ${range.label.replace(/ \(.*\)/, "")}`, detail: direction.label });
+    onStart({ items: pickedNumbers, dir: direction.id, name: `Pure Korean · ${range.label.replace(/ \(.*\)/, "")}`, detail: direction.label });
   }
 
   return (

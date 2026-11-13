@@ -1,7 +1,7 @@
 # Hangeul Practice
 
 Korean flashcards with groups, typed and multiple-choice practice, file import, pure Korean numbers (0–99),
-and alphabet practice (letters, syllables, words).
+Sino-Korean numbers by everyday situation, and alphabet practice (letters, syllables, words).
 React (Vite) front end, Node + Express API, MongoDB storage.
 
 ```
@@ -12,9 +12,9 @@ src/
   store.jsx                 cards/groups state, loading and debounced saving
   api.js                    calls to /api
   hooks.js                  per-device preferences (localStorage)
-  components/               PracticeTab, NumbersTab, AlphabetTab, CardsTab, ImportPanel, GroupsTab,
+  components/               PracticeTab, PureKoreanTab, SinoTab, AlphabetTab, CardsTab, ImportPanel, GroupsTab,
                             Session, Results, RunFlow, Login, Common
-  lib/                      numbers.js (native numbers), hangul.js (letters, syllables, words),
+  lib/                      numbers.js (pure Korean numbers), sino.js (Sino-Korean numbers by situation), hangul.js (letters, syllables, words),
                             questions.js (builds questions),
                             answers.js, importer.js, selectors.js, starter.js, util.js
   styles.css
@@ -28,7 +28,7 @@ netlify.toml                Netlify build settings
 
 Every practice type is a list of questions (shape documented at the top of `src/lib/questions.js`).
 Write a builder that returns that list, then render `<RunFlow build={...} renderSetup={...} />`
-as `NumbersTab.jsx` does. Session, results, retry-missed and keyboard handling come for free.
+as `PureKoreanTab.jsx` does. Session, results, retry-missed and keyboard handling come for free.
 
 ## 1. Database (MongoDB Atlas, free)
 

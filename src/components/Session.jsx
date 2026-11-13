@@ -70,7 +70,7 @@ export default function Session({ questions, onFinish, onExit }) {
 
       <div className="prompt">
         <span className="tag">{q.tag}</span>
-        <div className={`word ${wordClass(q.promptLang)}`} lang={langAttr(q.promptLang)}>
+        <div className={`word ${wordClass(q.promptLang)}${q.promptLong ? " long" : ""}`} lang={langAttr(q.promptLang)}>
           {q.prompt}
         </div>
       </div>
@@ -165,7 +165,7 @@ function Feedback({ q, res, last, onNext, onOverrule }) {
             You wrote: <span lang={q.input.lang}>{res.input}</span>
           </span>
         )}
-        {q.note && <span className="you">{q.note}</span>}
+        {q.note && <span className="you notes">{q.note}</span>}
         {typedWrong && (
           <div className="fb-actions">
             <button type="button" className="btn sm" onClick={onOverrule}>

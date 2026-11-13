@@ -102,7 +102,7 @@ export function buildNumberQuestions(numbers, dir) {
       promptLang: "num",
       answer: forms[0],
       answerLang: "ko",
-      note: [alternates.length ? `Also accepted: ${alternates.join(", ")}` : "", note].filter(Boolean).join(" "),
+      note: [alternates.length ? `Also accepted: ${alternates.join(", ")}` : "", note].filter(Boolean).join("\n"),
       review,
       input: { lang: "ko", label: "Korean number", placeholder: "한국어로 쓰세요", inputMode: "text" },
       check: (text) => forms.map(squash).includes(squash(text)),
@@ -159,4 +159,40 @@ export function buildAlphabetQuestions(items, pool) {
     check: (text) => key(text) === key(item.roman),
     options: makeAlphabetOptions(item, pool),
   }));
+}
+
+/* ---------- Sino-Korean numbers by situation (typed, both directions) ---------- */
+
+// Does the typed text contain the numbers this item expects? "35,000원", "35000" and "35 000" all match 35000.
+function numbersMatch(item, text) {
+  const t = String(text).normalize("NFKC");
+  if (item.digits) return t.replace(/\D/g, "") === item.digits;
+  const single = item.nums.length === 1;
+  const groups = (single ? t.replace(/[,\s]/g, "") : t).match(/\d+/g) || [];
+  return [item.nums, ...(item.numsAlts || [])].some((e) => e.length === groups.length && e.every((n, i) => Number(groups[i]) === n));
+}
+
+export function buildSinoQuestions(items, dir) {
+  return shuffle(items).map((item) => {
+    const readings = [item.ko, ...item.alts].map(squash);
+    const koToNum = dir === "ko-num";
+    const prompt = koToNum ? item.ko : item.display;
+    return {
+      id: item.id,
+      item,
+      tag: koToNum ? "Type the number" : "Type the Korean",
+      prompt,
+      promptLang: koToNum ? "ko" : "num",
+      promptLong: prompt.length > 7,
+      answer: koToNum ? item.display : item.ko,
+      answerLang: koToNum ? "num" : "ko",
+      note: [!koToNum && item.alts.length ? `Also accepted: ${item.alts.join(", ")}` : "", item.note].filter(Boolean).join("\n"),
+      review: { left: item.display, leftLang: "num", right: item.ko, rightLang: "ko" },
+      input: koToNum
+        ? { lang: "en", label: "Number", placeholder: item.placeholder, inputMode: item.nums.length > 1 || item.digits ? "text" : "numeric" }
+        : { lang: "ko", label: "Korean reading", placeholder: "한국어로 쓰세요", inputMode: "text" },
+      check: koToNum ? (text) => numbersMatch(item, text) : (text) => readings.includes(squash(text)),
+      options: null,
+    };
+  });
 }
